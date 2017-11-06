@@ -110,12 +110,20 @@
          2 GETLOAN               PIC X(8) VALUE 'GETLOAN '.
 
        1 TRANSIDS.
+         2 GET-NAME-TRAN         PIC X(4) VALUE 'GETN'.
+         2 ACCTCURR-TRAN         PIC X(4) VALUE 'ACUR'.
          2 ACCTPTNR-TRAN         PIC X(4) VALUE 'PTNR'.
 
        1 CHILD-TOKENS.
+         2 ANY-CHILD-TKN         PIC X(16).
+         2 GET-NAME-TKN          PIC X(16).
+         2 ACCTCURR-TKN          PIC X(16).
          2 ACCTPTNR-TKN          PIC X(16).
 
        1 RETURN-CHANNELS.
+         2 ANY-CHILD-CHAN        PIC X(16).
+         2 GET-NAME-CHAN         PIC X(16).
+         2 ACCTCURR-CHAN         PIC X(16).
          2 ACCTPTNR-CHAN         PIC X(16).
 
        1 CHILD-RETURN-STATUS     PIC S9(8) USAGE BINARY.
@@ -168,81 +176,132 @@
 
            PERFORM CHECK-COMMAND
 
-      * ----
-      * Get the customers name
-      * ----
-           EXEC CICS LINK PROGRAM ( GET-NAME )
-                          CHANNEL ( MYCHANNEL )
-                          RESP    ( COMMAND-RESP )
-                          RESP2   ( COMMAND-RESP2 )
+      * --------------------------------------------------------
+      * Asynchronously run GETN to get the customers name
+      * --------------------------------------------------------
+           EXEC CICS RUN TRANSID ( GET-NAME-TRAN )
+                         CHANNEL ( MYCHANNEL )
+                         CHILD   ( GET-NAME-TKN )
+                         RESP    ( COMMAND-RESP )
+                         RESP2   ( COMMAND-RESP2 )
            END-EXEC
 
            PERFORM CHECK-COMMAND
-
-           EXEC CICS GET CONTAINER ( GETNAME-CONTAINER )
-                           CHANNEL ( MYCHANNEL )
-                           INTO    ( CUSTOMER-NAME )
-                           RESP    ( COMMAND-RESP )
-                           RESP2   ( COMMAND-RESP2 )
-           END-EXEC    
-
-           PERFORM CHECK-COMMAND
-
-           INITIALIZE STATUS-MSG
-           STRING 'Welcome '
-                  DELIMITED BY SIZE
-                  CUSTOMER-NAME
-                  DELIMITED BY SIZE
-                INTO MSG-TEXT
-           PERFORM PRINT-STATUS-MESSAGE
-
-      * ----
-      * Get the customers current account details
-      * ----
-           EXEC CICS LINK PROGRAM ( ACCTCURR )
-                          CHANNEL ( MYCHANNEL )
-                          RESP    ( COMMAND-RESP )
-                          RESP2   ( COMMAND-RESP2 )
-           END-EXEC
-
-           PERFORM CHECK-COMMAND
-
-           EXEC CICS GET CONTAINER ( ACCTCURR-CONTAINER )
-                           CHANNEL ( MYCHANNEL )
-                           INTO    ( CURRENT-ACCOUNTS )
-                           RESP    ( COMMAND-RESP )
-                           RESP2   ( COMMAND-RESP2 )
-           END-EXEC
-
-           PERFORM CHECK-COMMAND
-
-           PERFORM PRINT-CURRENT-ACCOUNTS-DETAILS
 
       * --------------------------------------------------------
-      * Get the customers current account details from the
-      * partner bank
+      * Asynchronously run ACUR to get customers
+      * current account details
       * --------------------------------------------------------
-           EXEC CICS FETCH CHILD      ( ACCTPTNR-TKN )
-                           CHANNEL    ( ACCTPTNR-CHAN )
-                           COMPSTATUS ( CHILD-RETURN-STATUS )
-                           ABCODE     ( CHILD-RETURN-ABCODE )
-                           RESP       ( COMMAND-RESP )
-                           RESP2      ( COMMAND-RESP2 )
-           END-EXEC
-
-           PERFORM CHECK-COMMAND
-           PERFORM CHECK-CHILD
-
-           EXEC CICS GET CONTAINER ( ACCTPTNR-CONTAINER )
-                         CHANNEL   ( ACCTPTNR-CHAN )
-                         INTO      ( PARTNER-ACCOUNTS )
-                         RESP      ( COMMAND-RESP )
-                         RESP2     ( COMMAND-RESP2 )
+           EXEC CICS RUN TRANSID ( ACCTCURR-TRAN )
+                         CHANNEL ( MYCHANNEL )
+                         CHILD   ( ACCTCURR-TKN )
+                         RESP    ( COMMAND-RESP )
+                         RESP2   ( COMMAND-RESP2 )
            END-EXEC
 
            PERFORM CHECK-COMMAND
 
-           PERFORM PRINT-PARTNER-ACCOUNTS-DETAILS
+      * --------------------------------------------------------------
+      * Three child tasks have been run to execute asynchronously.
+      * Loop through the children to get the customer's details
+      * --------------------------------------------------------------
+           PERFORM 3 TIMES
+
+             EXEC CICS FETCH ANY        ( ANY-CHILD-TKN )
+                             CHANNEL    ( ANY-CHILD-CHAN )
+                             COMPSTATUS ( CHILD-RETURN-STATUS )
+                             ABCODE     ( CHILD-RETURN-ABCODE )
+                             RESP       ( COMMAND-RESP )
+                             RESP2      ( COMMAND-RESP2 )
+             END-EXEC
+
+             PERFORM CHECK-COMMAND
+             PERFORM CHECK-CHILD
+
+      *      -----  
+      *      Identify which child completed and process results
+      *      -----  
+             EVALUATE ANY-CHILD-TKN
+
+      *        -----
+      *        For GETNAME, print the welcome message
+      *        -----
+               WHEN GET-NAME-TKN
+
+      *          Save the channel name for future use
+                 MOVE ANY-CHILD-CHAN TO GET-NAME-CHAN
+
+                 EXEC CICS GET CONTAINER ( GETNAME-CONTAINER )
+                                 CHANNEL ( GET-NAME-CHAN )
+                                 INTO    ( CUSTOMER-NAME )
+                                 RESP    ( COMMAND-RESP )
+                                 RESP2   ( COMMAND-RESP2 )
+                 END-EXEC
+
+                 PERFORM CHECK-COMMAND
+
+                 INITIALIZE STATUS-MSG
+                 STRING 'Welcome '
+                        DELIMITED BY SIZE
+                        CUSTOMER-NAME
+                        DELIMITED BY SIZE
+                      INTO MSG-TEXT
+                 PERFORM PRINT-STATUS-MESSAGE
+
+      *        -----
+      *        For ACCTCURR, print the account details
+      *        -----
+               WHEN ACCTCURR-TKN
+
+      *          Save the channel name for future use
+                 MOVE ANY-CHILD-CHAN TO ACCTCURR-CHAN
+
+                 EXEC CICS GET CONTAINER ( ACCTCURR-CONTAINER )
+                                 CHANNEL ( ACCTCURR-CHAN )
+                                 INTO    ( CURRENT-ACCOUNTS )
+                                 RESP    ( COMMAND-RESP )
+                                 RESP2   ( COMMAND-RESP2 )
+                 END-EXEC
+
+                 PERFORM CHECK-COMMAND
+                 PERFORM PRINT-CURRENT-ACCOUNTS-DETAILS
+
+      *        -----
+      *        For ACCTPTNR, print the partner account details
+      *        -----
+               WHEN ACCTPTNR-TKN
+
+      *          Save the channel name for future use
+                 MOVE ANY-CHILD-CHAN TO ACCTPTNR-CHAN
+
+                 EXEC CICS GET CONTAINER ( ACCTPTNR-CONTAINER )
+                               CHANNEL   ( ACCTPTNR-CHAN )
+                               INTO      ( PARTNER-ACCOUNTS )
+                               RESP      ( COMMAND-RESP )
+                               RESP2     ( COMMAND-RESP2 )
+                 END-EXEC
+
+                 PERFORM CHECK-COMMAND
+                 PERFORM PRINT-PARTNER-ACCOUNTS-DETAILS
+
+      *        -----
+      *        Error: Unknown child is returned
+      *        -----
+               WHEN OTHER
+                 INITIALIZE STATUS-MSG
+                 STRING '*** Unknown child token: '
+                        DELIMITED BY SIZE
+                        ANY-CHILD-TKN
+                        DELIMITED BY SIZE
+                      INTO MSG-TEXT
+                 PERFORM PRINT-STATUS-MESSAGE
+
+                 PERFORM WEBHOME-ERROR
+
+             END-EVALUATE
+
+      * End of FETCH ANY loop
+           END-PERFORM
 
       * Send a message to the screen to
       * notify terminal user of completion
