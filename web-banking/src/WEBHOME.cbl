@@ -99,6 +99,7 @@
          2 INPUT-CONTAINER       PIC X(16) VALUE 'INPUTCONTAINER  '.
          2 GETNAME-CONTAINER     PIC X(16) VALUE 'GETNAMECONTAINER'.
          2 ACCTCURR-CONTAINER    PIC X(16) VALUE 'ACCTCURRCONT    '.
+         2 ACCTPTNR-CONTAINER    PIC X(16) VALUE 'ACCTPTNRCONT    '.
 
        1 MYCHANNEL               PIC X(16) VALUE 'MYCHANNEL       '.
 
@@ -107,6 +108,15 @@
          2 ACCTCURR              PIC X(8) VALUE 'ACCTCURR'.
          2 ACCTPTNR              PIC X(8) VALUE 'ACCTPTNR'.
          2 GETLOAN               PIC X(8) VALUE 'GETLOAN '.
+
+       1 TRANSIDS.
+         2 ACCTPTNR-TRAN         PIC X(4) VALUE 'PTNR'.
+
+       1 CHILD-TOKENS.
+         2 ACCTPTNR-TKN          PIC X(16).
+
+       1 RETURN-CHANNELS.
+         2 ACCTPTNR-CHAN         PIC X(16).
 
        1 CHILD-RETURN-STATUS     PIC S9(8) USAGE BINARY.
        1 CHILD-RETURN-ABCODE     PIC X(4).
@@ -141,6 +151,19 @@
                            CHANNEL ( MYCHANNEL)
                            RESP    ( COMMAND-RESP )
                            RESP2   ( COMMAND-RESP2 )
+           END-EXEC
+
+           PERFORM CHECK-COMMAND
+
+      * --------------------------------------------------------
+      * Asynchronously run PNTR to get account details
+      * from the partner bank
+      * --------------------------------------------------------
+           EXEC CICS RUN TRANSID ( ACCTPTNR-TRAN )
+                         CHANNEL ( MYCHANNEL )
+                         CHILD   ( ACCTPTNR-TKN )
+                         RESP    ( COMMAND-RESP )
+                         RESP2   ( COMMAND-RESP2 )
            END-EXEC
 
            PERFORM CHECK-COMMAND
@@ -194,6 +217,32 @@
            PERFORM CHECK-COMMAND
 
            PERFORM PRINT-CURRENT-ACCOUNTS-DETAILS
+
+      * --------------------------------------------------------
+      * Get the customers current account details from the
+      * partner bank
+      * --------------------------------------------------------
+           EXEC CICS FETCH CHILD      ( ACCTPTNR-TKN )
+                           CHANNEL    ( ACCTPTNR-CHAN )
+                           COMPSTATUS ( CHILD-RETURN-STATUS )
+                           ABCODE     ( CHILD-RETURN-ABCODE )
+                           RESP       ( COMMAND-RESP )
+                           RESP2      ( COMMAND-RESP2 )
+           END-EXEC
+
+           PERFORM CHECK-COMMAND
+           PERFORM CHECK-CHILD
+
+           EXEC CICS GET CONTAINER ( ACCTPTNR-CONTAINER )
+                         CHANNEL   ( ACCTPTNR-CHAN )
+                         INTO      ( PARTNER-ACCOUNTS )
+                         RESP      ( COMMAND-RESP )
+                         RESP2     ( COMMAND-RESP2 )
+           END-EXEC
+
+           PERFORM CHECK-COMMAND
+
+           PERFORM PRINT-PARTNER-ACCOUNTS-DETAILS
 
       * Send a message to the screen to
       * notify terminal user of completion
@@ -260,6 +309,32 @@
                       ' Overdraft: $'
                       DELIMITED BY SIZE
                       OVERDRAFT OF CURRENT-ACCOUNTS (COUNTER)
+                      DELIMITED BY SIZE
+                    INTO MSG-TEXT
+               PERFORM PRINT-STATUS-MESSAGE
+               ADD 1 TO COUNTER
+             END-PERFORM
+           END-IF
+           .
+
+      * Print partner account details
+       PRINT-PARTNER-ACCOUNTS-DETAILS.
+           IF NUMBER-OF-ACCOUNTS OF PARTNER-ACCOUNTS > 0 THEN
+             MOVE 1 TO COUNTER
+             PERFORM UNTIL COUNTER >
+                       NUMBER-OF-ACCOUNTS OF PARTNER-ACCOUNTS
+               INITIALIZE STATUS-MSG
+               STRING 'Acc: '
+                      DELIMITED BY SIZE
+                      ACCT-NUMBER OF PARTNER-ACCOUNTS (COUNTER)
+                      DELIMITED BY SPACE
+                      ' Bal: $'
+                      DELIMITED BY SIZE
+                      BALANCE OF PARTNER-ACCOUNTS (COUNTER)
+                      DELIMITED BY SIZE
+                      ' Overdraft: $'
+                      DELIMITED BY SIZE
+                      OVERDRAFT OF PARTNER-ACCOUNTS (COUNTER)
                       DELIMITED BY SIZE
                     INTO MSG-TEXT
                PERFORM PRINT-STATUS-MESSAGE
