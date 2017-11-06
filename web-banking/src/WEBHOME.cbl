@@ -100,6 +100,8 @@
          2 GETNAME-CONTAINER     PIC X(16) VALUE 'GETNAMECONTAINER'.
          2 ACCTCURR-CONTAINER    PIC X(16) VALUE 'ACCTCURRCONT    '.
          2 ACCTPTNR-CONTAINER    PIC X(16) VALUE 'ACCTPTNRCONT    '.
+         2 GETLOAN-CONTAINER     PIC X(16) VALUE 'GETLOANCONTAINER'.
+         2 ACCOUNTS-CONTAINER    PIC X(16) VALUE 'ALLCUSTACCOUNTS '.
 
        1 MYCHANNEL               PIC X(16) VALUE 'MYCHANNEL       '.
 
@@ -113,24 +115,34 @@
          2 GET-NAME-TRAN         PIC X(4) VALUE 'GETN'.
          2 ACCTCURR-TRAN         PIC X(4) VALUE 'ACUR'.
          2 ACCTPTNR-TRAN         PIC X(4) VALUE 'PTNR'.
+         2 GETLOAN-TRAN          PIC X(4) VALUE 'GETL'.
 
        1 CHILD-TOKENS.
          2 ANY-CHILD-TKN         PIC X(16).
          2 GET-NAME-TKN          PIC X(16).
          2 ACCTCURR-TKN          PIC X(16).
          2 ACCTPTNR-TKN          PIC X(16).
+         2 GET-LOAN-TKN          PIC X(16).
 
        1 RETURN-CHANNELS.
          2 ANY-CHILD-CHAN        PIC X(16).
          2 GET-NAME-CHAN         PIC X(16).
          2 ACCTCURR-CHAN         PIC X(16).
          2 ACCTPTNR-CHAN         PIC X(16).
+         2 GET-LOAN-CHAN         PIC X(16).
 
        1 CHILD-RETURN-STATUS     PIC S9(8) USAGE BINARY.
        1 CHILD-RETURN-ABCODE     PIC X(4).
 
        1 COMMAND-RESP            PIC S9(8) COMP.
        1 COMMAND-RESP2           PIC S9(8) COMP.
+
+      * Record for TSQ containing timeout details for loan quote
+       1 TIMEOUT-TSQ.
+         2 TSQ-NAME              PIC X(8) VALUE 'LTIMEOUT'.
+         2 TSQ-TIMEOUT           PIC X(8) VALUE '        '.
+         2 TIMEOUT-LEN           PIC S9(4) USAGE BINARY.
+       1 LOAN-RATE-TIMEOUT       PIC S9(8) USAGE BINARY VALUE 0.
 
        1 COUNTER                 PIC S9(4) COMP-5 SYNC VALUE 9.
 
@@ -302,6 +314,141 @@
 
       * End of FETCH ANY loop
            END-PERFORM
+
+      * -----
+      * Provide new business directive of Loan up-sell.
+      * Asynchronously call personalised loan rate generator.
+      * -----
+
+      *    -----
+      *    Pass the details of all of the customer's accounts
+      *    to provide a personalised loan quote
+      *    -----
+           EXEC CICS PUT CONTAINER ( ACCOUNTS-CONTAINER )
+                           FROM    ( CUSTOMER-ACCOUNTS )
+                           CHANNEL ( MYCHANNEL)
+                           RESP    ( COMMAND-RESP )
+                           RESP2   ( COMMAND-RESP2 )
+           END-EXEC
+
+           PERFORM CHECK-COMMAND
+
+      * --------------------------------------------------------
+      * Asynchronously run GETL to get customers
+      * personalised loan rate
+      * --------------------------------------------------------
+           EXEC CICS RUN TRANSID ( GETLOAN-TRAN )
+                         CHANNEL ( MYCHANNEL )
+                         CHILD   ( GET-LOAN-TKN )
+                         RESP    ( COMMAND-RESP )
+                         RESP2   ( COMMAND-RESP2 )
+           END-EXEC
+
+           PERFORM CHECK-COMMAND
+
+      *    -----
+      *    Before fetching (and blocking) on the loan quote results
+      *    Check to see if we should apply a TIMEOUT.
+      *    Typically from a FILE or DB2 look up -
+      *    for simplicity we will use a TSQ.
+      *    -----
+           MOVE 8 TO TIMEOUT-LEN
+           EXEC CICS READQ TS QUEUE  ( TSQ-NAME )
+                              ITEM   ( 1 )
+                              INTO   ( TSQ-TIMEOUT )
+                              LENGTH ( TIMEOUT-LEN )
+                              RESP   ( COMMAND-RESP )
+                              RESP2  ( COMMAND-RESP2 )
+           END-EXEC
+
+           IF COMMAND-RESP = DFHRESP(NORMAL)
+           THEN
+
+      *      -----
+      *      Found a timeout value to use on the FETCH of the quote
+      *      -----
+             MOVE TSQ-TIMEOUT(1:TIMEOUT-LEN) TO LOAN-RATE-TIMEOUT
+
+             INITIALIZE STATUS-MSG
+             STRING 'Timeout of '
+                      DELIMITED BY SIZE
+                      TSQ-TIMEOUT
+                      DELIMITED BY SPACE
+                      ' milliseconds to get loan rate quote.'
+                      DELIMITED BY SIZE
+                    INTO MSG-TEXT
+             PERFORM PRINT-STATUS-MESSAGE 
+
+           ELSE
+
+      *      -----
+      *      Did not find a timeout value. Continue with NO timeout
+      *      A TIMEOUT(0) parameter on the FETCH indicates no timeout
+      *      -----
+
+             MOVE 0 TO LOAN-RATE-TIMEOUT
+
+             INITIALIZE STATUS-MSG
+             MOVE 'Timeout not set for loan rate quote.' TO MSG-TEXT
+             PERFORM PRINT-STATUS-MESSAGE
+           END-IF
+
+      * --------------------------------------------------------------
+      * Perform the FETCH of loan rate
+      * --------------------------------------------------------------
+           EXEC CICS FETCH CHILD      ( GET-LOAN-TKN )
+                           TIMEOUT    ( LOAN-RATE-TIMEOUT )
+                           CHANNEL    ( GET-LOAN-CHAN )
+                           COMPSTATUS ( CHILD-RETURN-STATUS )
+                           ABCODE     ( CHILD-RETURN-ABCODE )
+                           RESP       ( COMMAND-RESP )
+                           RESP2      ( COMMAND-RESP2 )
+           END-EXEC
+
+      *    -----
+      *    Check if the FETCH of the child's results timed out
+      *    -----
+           IF COMMAND-RESP = DFHRESP(NOTFINISHED) AND COMMAND-RESP2 = 53
+           THEN
+             INITIALIZE STATUS-MSG
+             MOVE
+              'Abandoned loan quote because it took too long!'
+              TO MSG-TEXT
+             PERFORM PRINT-STATUS-MESSAGE
+
+           ELSE
+
+             PERFORM CHECK-COMMAND
+             PERFORM CHECK-CHILD
+
+      *      -----
+      *      Successful response from the child.
+      *      Get the personalised loan quote
+      *      -----
+             EXEC CICS GET CONTAINER ( GETLOAN-CONTAINER )
+                           CHANNEL   ( GET-LOAN-CHAN )
+                           INTO      ( CUSTOMER-LOAN-RATE )
+                           RESP      ( COMMAND-RESP )
+                           RESP2     ( COMMAND-RESP2 )
+             END-EXEC
+
+             PERFORM CHECK-COMMAND
+
+      *      -----
+      *      Finally, display the loan quote
+      *      -----
+
+             INITIALIZE STATUS-MSG
+             STRING 'Personalised Loan Rate: '
+                    DELIMITED BY SIZE
+                    CUSTOMER-LOAN-RATE
+                    DELIMITED BY SPACE
+                    ' %'
+                    DELIMITED BY SIZE
+                  INTO MSG-TEXT
+             PERFORM PRINT-STATUS-MESSAGE
+
+           END-IF
 
       * Send a message to the screen to
       * notify terminal user of completion
