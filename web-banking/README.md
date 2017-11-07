@@ -26,6 +26,8 @@ how the CICS asynchronous API in CICS TS V5.4 can provide robust,
 responsive applications.
 
 ## Set Up
+
+### COBOL Programs and their Resource Definitions
 The source code in folder web-banking-homepage tracks the changes made
 as the Rebooks publication progresses.  Use the tags to identify the
 level of the application at a particular point in the examples
@@ -66,6 +68,37 @@ DEFINE TRANSACTION(GETL) GROUP(ASYNCAPI) PROGRAM(GETLOAN)
 Note that the step-by-step instructions in the CICS Asynchronous API
 Rebooks publication will prompt to add transactions `PTNR`, `GETN`,
 `ACUR`, and `GETL`.
+
+A CICS Bundle project, `AsyncRedbooksWebBankingBundle`, is provided in
+the [`etc`](etc/) directory, along side the bundles for the Java
+example in Chapter 6.
+
+To use `AsyncRedbooksWebBankingBundle`:
+
+1. Import it into CICS Explorer
+2. Edit the LIBRARY resource contained within it to point to the
+   dataset name where your compiled COBOL programs are
+3. Export the bundle to zFS and define and install it in your CICS
+   region.
+
+### Java Web Frontend Application
+Two Eclipse projects are provided in the [`etc`](etc/) directory:
+
+- [`AccountServices`](etc/AccountServices/)
+- [`AccountServicesBundle`](etc/AccountServicesBundle/)
+
+The first is the dynamic web project that is explained in Chapter 6 of
+the Redbooks publication. The second project is a CICS Bundle to be
+able to deploy the dynamic web project to Liberty in CICS. The assumed
+name of the `JVMSERVER` resource is `WLPJVM`. This should be changed
+to match the name of your Liberty `JVMSERVER` resource, by editing
+[`AccountServices.warbundle`](etc/AccountServicesBundle/AccountServices.warbundle)
+in `AccountServicesBundle`.
+
+After successfully deploying this CICS Bundle to your CICS region,
+Liberty's `messages.log` will print the URL of the web
+application. Use a web browser to visit the page and drive the
+business logic.
 
 ## Running the Example
 
