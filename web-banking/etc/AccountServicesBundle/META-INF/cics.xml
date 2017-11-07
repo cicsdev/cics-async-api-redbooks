@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<manifest xmlns="http://www.ibm.com/xmlns/prod/cics/bundle" id="AccountServicesBundle" bundleMajorVer="1" bundleMinorVer="0" bundleMicroVer="0" bundleVersion="1" bundleRelease="0" build="IntA-201605291433">
+    <meta_directives>
+        <timestamp>2017-10-30T13:21:25.970Z</timestamp>
+    </meta_directives>
+    <define name="AccountServices" type="http://www.ibm.com/xmlns/prod/cics/bundle/WARBUNDLE" path="AccountServices.warbundle"/>
+</manifest>

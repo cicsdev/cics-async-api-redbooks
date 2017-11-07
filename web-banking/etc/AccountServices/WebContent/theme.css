@@ -1,0 +1,72 @@
+body {
+	background-color: #000;
+	color: #fff;
+	font: 14px/20px helvetica, arial, sans-serif;
+	padding: 3em;
+	margin: 0;
+	width: 80%;
+}
+
+h1 {
+	font-size: 4em;
+	padding: 0;
+	letter-spacing: -0.1em;
+}
+
+h2 {
+	font-size: 2.5em;
+	letter-spacing: -0.05em;
+}
+
+h3 {
+	font-size: 1.8em;
+	letter-spacing: -0.05em;
+}
+
+form {
+	background-color: #eee;
+	padding: 1em;
+}
+
+#main {
+	padding: 3em;
+	width: 50%;
+	min-width: 20em;
+	float: left;
+	background: #fff;
+	color: #000;
+	min-height: 60%;
+	max-height: 100%;
+}
+
+#side {
+	padding: 0 3em;
+	width: 20%;
+	float: left;
+	min-width: 20em;
+}
+
+tr {
+	background-color: #fff;
+}
+
+tr:nth-child(even) {
+	background-color: #eee;
+}
+
+td {
+	padding: 0.5em;
+}
+
+#smallprint {
+	padding: 3em 0 0 0;
+	font-size: 0.7em;
+}
+
+div#main a {
+	color: #000;
+}
+
+div#side a {
+    color: #fff;
+}
