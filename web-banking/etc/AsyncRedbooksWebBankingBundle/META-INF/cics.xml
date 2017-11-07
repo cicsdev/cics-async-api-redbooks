@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<manifest xmlns="http://www.ibm.com/xmlns/prod/cics/bundle" id="AsyncRedbooksWebBankingBundle" bundleMajorVer="1" bundleMinorVer="0" bundleMicroVer="0" bundleVersion="1" bundleRelease="0" build="IntA-201605291433">
+    <meta_directives>
+        <timestamp>2017-11-03T11:38:25.291Z</timestamp>
+    </meta_directives>
+    <define name="ACCTCURR" type="http://www.ibm.com/xmlns/prod/cics/bundle/PROGRAM" path="ACCTCURR.program"/>
+    <define name="ACCTPTNR" type="http://www.ibm.com/xmlns/prod/cics/bundle/PROGRAM" path="ACCTPTNR.program"/>
+    <define name="GETLOAN" type="http://www.ibm.com/xmlns/prod/cics/bundle/PROGRAM" path="GETLOAN.program"/>
+    <define name="GETNAME" type="http://www.ibm.com/xmlns/prod/cics/bundle/PROGRAM" path="GETNAME.program"/>
+    <define name="WEBHOME" type="http://www.ibm.com/xmlns/prod/cics/bundle/PROGRAM" path="WEBHOME.program"/>
+    <define name="WEBH" type="http://www.ibm.com/xmlns/prod/cics/bundle/TRANSACTION" path="WEBH.transaction"/>
+    <define name="ACUR" type="http://www.ibm.com/xmlns/prod/cics/bundle/TRANSACTION" path="ACUR.transaction"/>
+    <define name="GETN" type="http://www.ibm.com/xmlns/prod/cics/bundle/TRANSACTION" path="GETN.transaction"/>
+    <define name="PTNR" type="http://www.ibm.com/xmlns/prod/cics/bundle/TRANSACTION" path="PTNR.transaction"/>
+    <define name="GETL" type="http://www.ibm.com/xmlns/prod/cics/bundle/TRANSACTION" path="GETL.transaction"/>
+    <define name="ASYNCLIB" type="http://www.ibm.com/xmlns/prod/cics/bundle/LIBRARY" path="ASYNCLIB.library"/>
+</manifest>
