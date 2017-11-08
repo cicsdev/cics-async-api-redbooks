@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<warbundle symbolicname="AccountServices" jvmserver="WLPJVM"/>
+<warbundle symbolicname="AccountServices" jvmserver="DFHWLP"/>

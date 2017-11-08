@@ -25,11 +25,13 @@ This fictional example is based on real life situations, showcasing
 how the CICS asynchronous API in CICS TS V5.4 can provide robust,
 responsive applications.
 
+
 ## Set Up
+
 
 ### COBOL Programs and their Resource Definitions
 The source code in folder web-banking-homepage tracks the changes made
-as the Rebooks publication progresses.  Use the tags to identify the
+as the Redbooks publication progresses.  Use the tags to identify the
 level of the application at a particular point in the examples
 history.
 
@@ -66,7 +68,7 @@ DEFINE TRANSACTION(GETL) GROUP(ASYNCAPI) PROGRAM(GETLOAN)
 ```
  
 Note that the step-by-step instructions in the CICS Asynchronous API
-Rebooks publication will prompt to add transactions `PTNR`, `GETN`,
+Redbooks publication will prompt to add transactions `PTNR`, `GETN`,
 `ACUR`, and `GETL`.
 
 A CICS Bundle project, `AsyncRedbooksWebBankingBundle`, is provided in
@@ -81,6 +83,7 @@ To use `AsyncRedbooksWebBankingBundle`:
 3. Export the bundle to zFS and define and install it in your CICS
    region.
 
+
 ### Java Web Frontend Application
 Two Eclipse projects are provided in the [`etc`](etc/) directory:
 
@@ -90,7 +93,7 @@ Two Eclipse projects are provided in the [`etc`](etc/) directory:
 The first is the dynamic web project that is explained in Chapter 6 of
 the Redbooks publication. The second project is a CICS Bundle to be
 able to deploy the dynamic web project to Liberty in CICS. The assumed
-name of the `JVMSERVER` resource is `WLPJVM`. This should be changed
+name of the `JVMSERVER` resource is `DFHWLP`. This should be changed
 to match the name of your Liberty `JVMSERVER` resource, by editing
 [`AccountServices.warbundle`](etc/AccountServicesBundle/AccountServices.warbundle)
 in `AccountServicesBundle`.
@@ -100,7 +103,9 @@ Liberty's `messages.log` will print the URL of the web
 application. Use a web browser to visit the page and drive the
 business logic.
 
+
 ## Running the Example
+
 
 ### Using a CICS Terminal
 At the CICS terminal screen, enter the transaction WEBH, followed by a
@@ -112,5 +117,44 @@ For example:
 WEBH 0001
 ```
 
+
+## Using z/OS Provisioning Toolkit
+If you have [z/OS Provisioning Toolkit][zospt] set up at your
+workplace, you can use the [`zosptfile`](etc/zosptfile) we've included
+to automate the provisioning of a CICS region with the resource
+definitions and Java components installed. To use this:
+
+1. Download the [zip file of this repository][zip]
+2. Copy it across to the zFS partition on your LPAR (ensuring it's
+   copied in binary format)
+3. From a shell when connected to USS on the LPAR, extract the zip
+   file, e.g., ```jar xf cics-async-api-redbooks-master.zip```
+4. Edit the library resource in the CICS Bundle,
+   [`AsyncRedbooksWebBankingBundle/ASYNCLIB.library`][asynclib], to
+   change its `dsname01` property to point to your dataset with the
+   compiled COBOL modules
+5. Edit the
+   [`AccountServicesBundle/AccountServices.warbundle`][warbundle]'s
+   jvmserver property, if you've edited the default of `DFHWLP` that
+   z/OS PT provides in its template
+4. Build the image:
+   ```zospt build -t cics_async_redbooks cics-async-api-redbooks-master/web-banking/etc/```
+5. Run the image:
+   ```zospt run cics_async_redbooks```
+6. After the CICS region starts successfully, use a web browser to
+   connect to
+   ```http://[hostname]:[port]/AccountServices```
+   specific to your LPAR's hostname, and the port number assigned to
+   your CICS region by z/OS PT.
+
+
 ## License
 This project is licensed under [Apache License Version 2.0](../LICENSE).
+
+
+
+
+[zospt]: https://developer.ibm.com/mainframe/products/zospt/
+[zip]: https://github.com/cicsdev/cics-async-api-redbooks/archive/master.zip
+[asynclib]: etc/AsyncRedbooksWebBankingBundle/ASYNCLIB.library
+[warbundle]: etc/AccountServicesBundle/AccountServices.warbundle

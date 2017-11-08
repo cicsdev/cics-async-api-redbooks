@@ -1,0 +1,3 @@
+FROM cics_54_liberty
+COPY AccountServicesBundle bundles/AccountServicesBundle
+COPY AsyncRedbooksWebBankingBundle bundles/AsyncRedbooksWebBankingBundle
