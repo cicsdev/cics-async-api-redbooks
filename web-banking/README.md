@@ -128,7 +128,12 @@ definitions and Java components installed. To use this:
 2. Copy it across to the zFS partition on your LPAR (ensuring it's
    copied in binary format)
 3. From a shell when connected to USS on the LPAR, extract the zip
-   file, e.g., ```jar xf cics-async-api-redbooks-master.zip```
+   file, e.g.,
+
+   ```bash
+   jar xf cics-async-api-redbooks-master.zip
+   ```
+
 4. Edit the library resource in the CICS Bundle,
    [`AsyncRedbooksWebBankingBundle/ASYNCLIB.library`][asynclib], to
    change its `dsname01` property to point to your dataset with the
@@ -138,12 +143,24 @@ definitions and Java components installed. To use this:
    jvmserver property, if you've edited the default of `DFHWLP` that
    z/OS PT provides in its template
 4. Build the image:
-   ```zospt build -t cics_async_redbooks cics-async-api-redbooks-master/web-banking/etc/```
+
+   ```bash
+   zospt build -t cics_async_redbooks cics-async-api-redbooks-master/web-banking/etc/
+   ```
+
 5. Run the image:
-   ```zospt run cics_async_redbooks```
+
+   ```bash
+   zospt run cics_async_redbooks
+   ```
+
 6. After the CICS region starts successfully, use a web browser to
    connect to
-   ```http://[hostname]:[port]/AccountServices```
+
+   ```
+   http://[hostname]:[port]/AccountServices
+   ```
+
    specific to your LPAR's hostname, and the port number assigned to
    your CICS region by z/OS PT.
 
