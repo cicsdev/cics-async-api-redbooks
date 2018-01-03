@@ -1,9 +1,10 @@
 # CICS Asynchronous API Web Banking Homepage Example
 
-This is an example application used by the CICS Asynchronous API
-Redbooks publication. This application acts as a data gathering
-application to populate the information for a Web banking homepage for
-a fictional bank.
+This is an example application used by the IBM Redbooks publication,
+[_IBM CICS Asynchronous API: Concurrent Processing Made
+Simple_][book]. This application acts as a data gathering application
+to populate the information for a Web banking homepage for a fictional
+bank.
 
 The main application program `WEBHOME` initially requests information
 from `GETNAME` and `ACCTCURR`, to retrieve details on a customer and
@@ -175,3 +176,4 @@ This project is licensed under [Apache License Version 2.0](../LICENSE).
 [zip]: https://github.com/cicsdev/cics-async-api-redbooks/archive/master.zip
 [asynclib]: etc/AsyncRedbooksWebBankingBundle/ASYNCLIB.library
 [warbundle]: etc/AccountServicesBundle/AccountServices.warbundle
+[book]: https://www.redbooks.ibm.com/Redbooks.nsf/RedbookAbstracts/sg248411.html?Open
