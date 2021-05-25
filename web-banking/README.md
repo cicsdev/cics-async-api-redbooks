@@ -132,7 +132,7 @@ definitions and Java components installed. To use this:
    file, e.g.,
 
    ```bash
-   jar xf cics-async-api-redbooks-master.zip
+   jar xf cics-async-api-redbooks-main.zip
    ```
 
 4. Edit the library resource in the CICS Bundle,
@@ -146,7 +146,7 @@ definitions and Java components installed. To use this:
 4. Build the image:
 
    ```bash
-   zospt build -t cics_async_redbooks cics-async-api-redbooks-master/web-banking/etc/
+   zospt build -t cics_async_redbooks cics-async-api-redbooks-main/web-banking/etc/
    ```
 
 5. Run the image:
@@ -173,7 +173,7 @@ This project is licensed under [Apache License Version 2.0](../LICENSE).
 
 
 [zospt]: https://developer.ibm.com/mainframe/products/zospt/
-[zip]: https://github.com/cicsdev/cics-async-api-redbooks/archive/master.zip
+[zip]: https://github.com/cicsdev/cics-async-api-redbooks/archive/main.zip
 [asynclib]: etc/AsyncRedbooksWebBankingBundle/ASYNCLIB.library
 [warbundle]: etc/AccountServicesBundle/AccountServices.warbundle
 [book]: https://www.redbooks.ibm.com/Redbooks.nsf/RedbookAbstracts/sg248411.html?Open
