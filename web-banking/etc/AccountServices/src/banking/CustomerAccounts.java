@@ -37,6 +37,7 @@ import com.ibm.cics.server.CodePageErrorException;
 import com.ibm.cics.server.ContainerErrorException;
 import com.ibm.cics.server.InvalidRequestException;
 import com.ibm.cics.server.InvalidTransactionIdException;
+import com.ibm.cics.server.LengthErrorException;
 import com.ibm.cics.server.NotAuthorisedException;
 import com.ibm.cics.server.NotFoundException;
 import com.ibm.cics.server.ResourceDisabledException;
@@ -244,7 +245,7 @@ public class CustomerAccounts
       }
       catch (InvalidRequestException | NotFoundException
           | ContainerErrorException | ChannelErrorException
-          | CCSIDErrorException | CodePageErrorException e)
+          | CCSIDErrorException | CodePageErrorException | LengthErrorException e)
       {
         e.printStackTrace();
       }
@@ -326,7 +327,7 @@ public class CustomerAccounts
       returnValue = response.getChannel().getContainer(containerName).get();
     }
     catch (ContainerErrorException | ChannelErrorException
-        | CCSIDErrorException | CodePageErrorException e)
+        | CCSIDErrorException | CodePageErrorException | LengthErrorException e)
     {
       System.out.println("Container error: " + containerName);
     }
